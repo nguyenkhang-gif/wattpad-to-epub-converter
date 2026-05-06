@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wattpad → EPUB</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    h1 span { color: #f97316; }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #e0e0e0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: #f97316; }
+
+    input[type="file"] { cursor: pointer; padding: 8px 12px; }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .toggle input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #f97316; }
+    .toggle label { margin: 0; font-size: 14px; color: #ccc; cursor: pointer; }
+
+    button {
+      width: 100%;
+      background: #f97316;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #ea6c0a; }
+    button:disabled { background: #444; cursor: not-allowed; }
+
+    .log {
+      margin-top: 20px;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      font-family: monospace;
+      color: #aaa;
+      max-height: 160px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .log p { margin-bottom: 4px; }
+    .log .ok { color: #4ade80; }
+    .log .err { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Wattpad <span>→</span> EPUB</h1>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="title" placeholder="e.g. Gimai Seikatsu Vol 4">
+    </div>
+
+    <div class="field">
+      <label>Author</label>
+      <input type="text" id="author" placeholder="e.g. DuyAnhBi4">
+    </div>
+
+    <div class="field">
+      <label>data.html <span style="color:#f97316">*</span></label>
+      <input type="file" id="dataHtml" accept=".html">
+    </div>
+
+    <div class="field">
+      <label>Cover image (optional)</label>
+      <input type="file" id="cover" accept="image/*">
+    </div>
+
+    <div class="toggle">
+      <input type="checkbox" id="includeImages" checked>
+      <label for="includeImages">Include images in EPUB</label>
+    </div>
+
+    <button id="btn" onclick="generate()">Generate EPUB</button>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    async function generate() {
+      const dataHtml = document.getElementById('dataHtml').files[0];
+      if (!dataHtml) return alert('Please select a data.html file.');
+
+      const btn = document.getElementById('btn');
+      const logEl = document.getElementById('log');
+
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      logEl.style.display = 'block';
+      logEl.innerHTML = '<p>Starting...</p>';
+
+      const form = new FormData();
+      form.append('title', document.getElementById('title').value || 'Untitled');
+      form.append('author', document.getElementById('author').value || 'Unknown');
+      form.append('includeImages', document.getElementById('includeImages').checked);
+      form.append('dataHtml', dataHtml);
+
+      const cover = document.getElementById('cover').files[0];
+      if (cover) form.append('cover', cover);
+
+      try {
+        const res = await fetch('/generate', { method: 'POST', body: form });
+
+        if (!res.ok) {
+          const data = await res.json();
+          logEl.innerHTML += `<p class="err">❌ ${data.error}</p>`;
+          return;
+        }
+
+        // trigger download
+        const blob = await res.blob();
+        const title = document.getElementById('title').value || 'Untitled';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${title}.epub`;
+        a.click();
+
+        logEl.innerHTML += '<p class="ok">✅ Done! EPUB downloaded.</p>';
+      } catch (err) {
+        logEl.innerHTML += `<p class="err">❌ ${err.message}</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate EPUB';
+      }
+    }
+  </script>
+</body>
+</html>
