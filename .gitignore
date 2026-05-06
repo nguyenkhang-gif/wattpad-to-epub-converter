@@ -2,7 +2,6 @@ node_modules/
 *.epub
 data.html
 epub-images/
-uploads/
 cover.jpg
 cover.jpeg
 cover.png
