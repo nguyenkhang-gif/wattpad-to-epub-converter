@@ -147,6 +147,11 @@ try {
         console.log(`✅ EPUB created: ${epubTitle}.epub`);
       } catch (error) {
         console.error("❌ Error creating EPUB:", error);
+      } finally {
+        if (fs.existsSync(IMG_DIR)) {
+          fs.rmSync(IMG_DIR, { recursive: true, force: true });
+          console.log('🗑️  Cleared epub-images/');
+        }
       }
     } else {
       console.log("❌ Cancelled.");
