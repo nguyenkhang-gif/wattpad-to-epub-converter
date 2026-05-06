@@ -1,54 +1,80 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 
-const URL = 'https://www.wattpad.com/story/296617061';
+const START_URL = 'https://www.wattpad.com/1173022060-gimai-seikatsu-vol-4-ch%C6%B0%C6%A1ng-1-ng%C3%A0y-3-th%C3%A1ng-9-th%E1%BB%A9';
+const SCROLL_STEP = 800;
+const SCROLL_DELAY = 1000;
 
-async function scrollToBottom(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let lastHeight = 0;
-      const timer = setInterval(() => {
-        window.scrollBy(0, 800);
-        const newHeight = document.body.scrollHeight;
-        if (newHeight === lastHeight) {
-          clearInterval(timer);
-          resolve();
-        }
-        lastHeight = newHeight;
-      }, 300);
-    });
-  });
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
 (async () => {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
-
   await page.setViewport({ width: 1280, height: 900 });
-  console.log(`🌐 Đang mở: ${URL}`);
-  await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
 
-  console.log('⏬ Đang scroll xuống cuối trang...');
-  await scrollToBottom(page);
+  let currentUrl = START_URL;
+  const allArticles = [];
+  let chapterIndex = 1;
 
-  // Chờ thêm để lazy-load render xong
-  await new Promise(r => setTimeout(r, 2000));
+  while (currentUrl) {
+    console.log(`\n📖 Chương ${chapterIndex}: ${currentUrl}`);
+    await page.goto(currentUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+    await sleep(1500);
 
-  const articles = await page.evaluate(() => {
-    return [...document.querySelectorAll('article.story-part')]
-      .map(el => el.outerHTML)
-      .join('\n\n');
-  });
+    console.log('  ⏬ Đang scroll...');
+    await scrollUntilEndFn(page);
 
-  if (!articles) {
-    console.error('❌ Không tìm thấy thẻ <article> nào!');
+    // Lấy article của trang hiện tại
+    const articleHtml = await page.evaluate(() => {
+      const el = document.querySelector('article.story-part');
+      return el ? el.outerHTML : null;
+    });
+
+    if (articleHtml) {
+      allArticles.push(articleHtml);
+      console.log(`  ✅ Đã lấy nội dung chương ${chapterIndex}`);
+    } else {
+      console.warn(`  ⚠️  Không tìm thấy <article> ở chương ${chapterIndex}`);
+    }
+
+    // Tìm link chương tiếp theo
+    const nextUrl = await page.evaluate(() => {
+      const a = document.querySelector('#story-part-navigation a');
+      return a ? a.href : null;
+    });
+
+    currentUrl = nextUrl || null;
+    chapterIndex++;
+  }
+
+  if (allArticles.length === 0) {
+    console.error('\n❌ Không thu được nội dung nào!');
     await browser.close();
     process.exit(1);
   }
 
-  const count = (articles.match(/<article/g) || []).length;
-  fs.writeFileSync('data.html', articles, 'utf8');
-  console.log(`✅ Đã lưu ${count} chương vào data.html`);
+  fs.writeFileSync('data.html', allArticles.join('\n\n'), 'utf8');
+  console.log(`\n✅ Hoàn tất! Đã lưu ${allArticles.length} chương vào data.html`);
 
   await browser.close();
 })();
+
+async function scrollUntilEndFn(page) {
+  while (true) {
+    const status = await page.evaluate((step) => {
+      const nav = document.querySelector('#story-part-navigation');
+      if (nav) {
+        const rect = nav.getBoundingClientRect();
+        if (rect.top <= window.innerHeight) return 'nav';
+      }
+      const before = window.scrollY;
+      window.scrollBy(0, step);
+      return window.scrollY === before ? 'bottom' : 'scrolling';
+    }, SCROLL_STEP);
+
+    if (status === 'nav' || status === 'bottom') break;
+    await sleep(SCROLL_DELAY);
+  }
+}
