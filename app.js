@@ -124,8 +124,21 @@ try {
   console.log(`\n🔍 Images in content: ${hasImg}`);
 
   if (hasImg) {
-    console.log('📥 Pre-downloading images to local...');
-    await localizeImages(chapters);
+    const includeImgs = await new Promise(resolve => {
+      rl.question('Include images in EPUB? (y/n): ', ans => resolve(ans.trim().toLowerCase() === 'y'));
+    });
+
+    if (includeImgs) {
+      console.log('📥 Pre-downloading images to local...');
+      await localizeImages(chapters);
+    } else {
+      chapters.forEach(c => {
+        const $ = cheerio.load(c.data);
+        $('img').remove();
+        c.data = $('body').html();
+      });
+      console.log('🚫 Images removed from content.');
+    }
   }
 
   console.log(`\n📘 File: ${inputFile}`);
