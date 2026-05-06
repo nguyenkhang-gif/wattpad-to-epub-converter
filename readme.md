@@ -1,12 +1,12 @@
 # Wattpad → EPUB Converter
 
-Tự động scrape nội dung từ Wattpad và tạo file EPUB.
+Automatically scrape content from Wattpad and generate an EPUB file.
 
-## Yêu cầu
+## Requirements
 
 - Node.js >= 18
 
-## Cài đặt
+## Installation
 
 ```bash
 npm install
@@ -20,59 +20,59 @@ scrape.js  →  data.html  →  app.js  →  .epub
 
 ---
 
-## Bước 1 — Scrape nội dung (`scrape.js`)
+## Step 1 — Scrape content (`scrape.js`)
 
-Mở `scrape.js` và thêm link từng chương vào mảng `URLS`:
+Open `scrape.js` and add chapter URLs to the `URLS` array:
 
 ```js
 const URLS = [
-  'https://www.wattpad.com/1173022060-chuong-1',
-  'https://www.wattpad.com/1173066655-chuong-2',
+  'https://www.wattpad.com/1173022060-chapter-1',
+  'https://www.wattpad.com/1173066655-chapter-2',
   // ...
 ];
 ```
 
-Chạy scraper:
+Run the scraper:
 
 ```bash
 npm run scrape
 ```
 
-Script sẽ:
-1. Nếu `data.html` đã tồn tại — hỏi xóa hay giữ (append thêm vào cuối)
-2. Mở Chrome, lần lượt mở từng link
-3. Scroll từng bước 800px — delay 1 giây mỗi lần — dừng khi chạm thẻ điều hướng hoặc hết trang
-4. Lấy `<article class="story-part">` và **ghi vào `data.html` ngay** trước khi chuyển chương
+The script will:
+1. If `data.html` already exists — ask whether to delete it or keep it (append to the end)
+2. Open Chrome and visit each URL in order
+3. Scroll 800px at a time with a 1-second delay — stops when it hits the navigation element or reaches the bottom of the page
+4. Extract `<article class="story-part">` and **write to `data.html` immediately** before moving to the next chapter
 
-> Nếu bị ngắt giữa chừng, các chương đã scrape vẫn được giữ trong `data.html`.
+> If interrupted, all chapters already scraped are safely kept in `data.html`.
 
 ---
 
-## Bước 2 — Tạo EPUB (`app.js`)
+## Step 2 — Generate EPUB (`app.js`)
 
-Chỉnh thông tin sách ở đầu `app.js`:
+Edit the book info at the top of `app.js`:
 
 ```js
 const epubTitle  = 'Gimai Seikatsu Vol 4';
 const epubAuthor = 'DuyAnhBi4';
 ```
 
-Đặt ảnh bìa (tùy chọn) tên `cover.jpg` / `cover.png` vào cùng thư mục.
+Optionally place a cover image named `cover.jpg` / `cover.png` in the same directory.
 
-Chạy:
+Run:
 
 ```bash
 npm start
 ```
 
-Xác nhận `y` — file `<epubTitle>.epub` sẽ được tạo trong cùng thư mục.
+Confirm `y` when prompted — the file `<epubTitle>.epub` will be created in the same directory.
 
 ---
 
-## Cấu trúc HTML hỗ trợ
+## Supported HTML Structure
 
-| Thẻ | Ý nghĩa |
+| Tag | Meaning |
 |-----|---------|
-| `article.story-part` | Một chương |
-| `.part-header h1` | Tiêu đề chương |
-| `div.panel-reading p[data-p-id]` | Đoạn văn nội dung |
+| `article.story-part` | A single chapter |
+| `.part-header h1` | Chapter title |
+| `div.panel-reading p[data-p-id]` | Paragraph content |
