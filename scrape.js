@@ -3,7 +3,7 @@ import fs from 'fs';
 import readline from 'readline';
 
 const URLS = [
-   "https://www.wattpad.com/1219339655-gimai-seikatsu-vol-5-minh-h%E1%BB%8Da",
+  "https://www.wattpad.com/1219339655-gimai-seikatsu-vol-5-minh-h%E1%BB%8Da",
   "https://www.wattpad.com/1219631847-gimai-seikatsu-vol-5-m%E1%BB%9F-%C4%91%E1%BA%A7u",
   "https://www.wattpad.com/1221603583-gimai-seikatsu-vol-5-ch%C6%B0%C6%A1ng-1-ng%C3%A0y-19-th%C3%A1ng-10-th%E1%BB%A9",
   "https://www.wattpad.com/1227784097-gimai-seikatsu-vol-5-ch%C6%B0%C6%A1ng-2-ng%C3%A0y-19-th%C3%A1ng-10-th%E1%BB%A9",

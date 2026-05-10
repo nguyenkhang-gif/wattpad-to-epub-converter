@@ -7,7 +7,7 @@ import * as cheerio from 'cheerio';
 import Epub from 'epub-gen';
 
 const inputFile = 'data.html';
-const epubTitle = 'Gimai Seikatsu Vol 4';
+const epubTitle = 'Gimai Seikatsu Vol 6';
 const epubAuthor = 'DuyAnhBi4';
 const IMG_DIR = './epub-images';
 
