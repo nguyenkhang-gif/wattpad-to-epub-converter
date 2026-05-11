@@ -1,0 +1,30 @@
+{
+  "manga": {
+    "title": "My Manga Title",
+    "author": "Author Name",
+    "language": "vi"
+  },
+  "scrape": {
+    "outputFile": "data.html",
+    "headless": false,
+    "scroll": {
+      "step": 800,
+      "delay": 1000
+    },
+    "comments": {
+      "enabled": true,
+      "scrollDelay": 1200,
+      "maxIterations": 80,
+      "maxReplyClicks": 200
+    },
+    "urls": [
+      "https://www.wattpad.com/...-chapter-1",
+      "https://www.wattpad.com/...-chapter-2"
+    ]
+  },
+  "epub": {
+    "inputFile": "data.html",
+    "coverDir": ".",
+    "imagesDir": "./epub-images"
+  }
+}

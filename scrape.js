@@ -2,30 +2,17 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import readline from 'readline';
 
-const URLS = [
-  "https://www.wattpad.com/1424837505-gimai-seikatsu-volume-9-minh-h%E1%BB%8Da",
-  "https://www.wattpad.com/1460358306-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-1-12-th%C3%A1ng-6-th%E1%BB%A9",
-  "https://www.wattpad.com/1461225048-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-2-12-th%C3%A1ng-6-th%E1%BB%A9",
-  "https://www.wattpad.com/1463032555-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-3-13-th%C3%A1ng-6-ch%E1%BB%A7",
-  "https://www.wattpad.com/1465868098-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-4-13-th%C3%A1ng-6-ch%E1%BB%A7",
-  "https://www.wattpad.com/1465877236-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-5-14-th%C3%A1ng-6-th%E1%BB%A9",
-  "https://www.wattpad.com/1465894379-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-6-14-th%C3%A1ng-6-th%E1%BB%A9",
-  "https://www.wattpad.com/1466125555-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-7-15-th%C3%A1ng-6-th%E1%BB%A9-ba",
-  "https://www.wattpad.com/1469369984-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-8-15-th%C3%A1ng-6-th%E1%BB%A9-ba",
-  "https://www.wattpad.com/1469398585-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-9-20-th%C3%A1ng-7-th%E1%BB%A9-ba",
-  "https://www.wattpad.com/1469664011-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-10-20-th%C3%A1ng-7-th%E1%BB%A9",
-  "https://www.wattpad.com/1471120026-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-11-22-th%C3%A1ng-7-th%E1%BB%A9",
-  "https://www.wattpad.com/1471344137-gimai-seikatsu-volume-9-ch%C6%B0%C6%A1ng-12-22-th%C3%A1ng-7-th%E1%BB%A9"
-];
+const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const { urls, outputFile, headless, scroll, comments: commentsCfg } = config.scrape;
 
-const SCROLL_STEP = 800;
-const SCROLL_DELAY = 1000;
-const OUTPUT_FILE = 'data.html';
+const SCROLL_STEP = scroll.step;
+const SCROLL_DELAY = scroll.delay;
+const OUTPUT_FILE = outputFile;
 
-const SCRAPE_COMMENTS = true;
-const COMMENT_SCROLL_DELAY = 1200;
-const COMMENT_MAX_ITERATIONS = 80;
-const REPLY_MAX_CLICKS = 200;
+const SCRAPE_COMMENTS = commentsCfg.enabled;
+const COMMENT_SCROLL_DELAY = commentsCfg.scrollDelay;
+const COMMENT_MAX_ITERATIONS = commentsCfg.maxIterations;
+const REPLY_MAX_CLICKS = commentsCfg.maxReplyClicks;
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
@@ -127,15 +114,28 @@ async function expandAllReplies(page) {
     }
   }
 
-  const browser = await puppeteer.launch({ headless: false });
+  let browser;
+  try {
+    const res = await fetch('http://localhost:9222/json/version');
+    const { webSocketDebuggerUrl } = await res.json();
+    browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl });
+    console.log('🔗 Đã kết nối vào Chrome đang chạy (VPN active)');
+  } catch {
+    console.log('🚀 Khởi động Chrome mới...');
+    browser = await puppeteer.launch({
+      headless,
+      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      args: ['--no-first-run', '--no-default-browser-check'],
+    });
+  }
   const page = await browser.newPage();
   await page.setViewport({ width: 1280, height: 900 });
 
   let saved = 0;
 
-  for (let i = 0; i < URLS.length; i++) {
-    const url = URLS[i];
-    console.log(`\n📖 [${i + 1}/${URLS.length}] ${url}`);
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    console.log(`\n📖 [${i + 1}/${urls.length}] ${url}`);
 
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
     await sleep(1500);
@@ -148,7 +148,6 @@ async function expandAllReplies(page) {
       await loadAllComments(page);
       console.log('  💬 Đang mở rộng replies...');
       await expandAllReplies(page);
-      // After replies expand, more comments may load — scroll a bit more
       await loadAllComments(page);
     }
 
@@ -175,5 +174,5 @@ async function expandAllReplies(page) {
   }
 
   await browser.close();
-  console.log(`\n✅ Hoàn tất! ${saved}/${URLS.length} chương đã lưu vào ${OUTPUT_FILE}`);
+  console.log(`\n✅ Hoàn tất! ${saved}/${urls.length} chương đã lưu vào ${OUTPUT_FILE}`);
 })();

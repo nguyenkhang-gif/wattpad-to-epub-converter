@@ -5,6 +5,7 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
+    "init": "node init.js",
     "start": "node app.js",
     "scrape": "node scrape.js"
   },

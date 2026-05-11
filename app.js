@@ -6,16 +6,18 @@ import readline from 'readline';
 import * as cheerio from 'cheerio';
 import Epub from 'epub-gen';
 
-const inputFile = 'data.html';
-const epubTitle = 'Gimai Seikatsu Vol 9';
-const epubAuthor = 'mis3ry';
-const IMG_DIR = './epub-images';
+const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const inputFile = config.epub.inputFile;
+const epubTitle = config.manga.title;
+const epubAuthor = config.manga.author;
+const IMG_DIR = config.epub.imagesDir;
 
 const LOCAL_COVER_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+const COVER_DIR = config.epub.coverDir;
 
 function findLocalCover() {
   for (const ext of LOCAL_COVER_EXTENSIONS) {
-    const p = `./cover${ext}`;
+    const p = path.join(COVER_DIR, `cover${ext}`);
     if (fs.existsSync(p)) return p;
   }
   return null;
