@@ -122,9 +122,13 @@ async function expandAllReplies(page) {
     console.log('🔗 Đã kết nối vào Chrome đang chạy (VPN active)');
   } catch {
     console.log('🚀 Khởi động Chrome mới...');
+    const chromePath = config.scrape.chromePath && config.scrape.chromePath[process.platform];
+    if (chromePath && !fs.existsSync(chromePath)) {
+      console.warn(`⚠️  Không tìm thấy Chrome ở "${chromePath}", dùng Chromium đi kèm Puppeteer.`);
+    }
     browser = await puppeteer.launch({
       headless,
-      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ...(chromePath && fs.existsSync(chromePath) ? { executablePath: chromePath } : {}),
       args: ['--no-first-run', '--no-default-browser-check'],
     });
   }
