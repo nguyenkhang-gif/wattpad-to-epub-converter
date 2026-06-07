@@ -6,6 +6,7 @@
   },
   "scrape": {
     "outputFile": "data.html",
+    "proxy": "",
     "headless": false,
     "scroll": {
       "step": 800,
