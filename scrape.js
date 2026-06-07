@@ -121,15 +121,22 @@ async function expandAllReplies(page) {
     browser = await puppeteer.connect({ browserWSEndpoint: webSocketDebuggerUrl });
     console.log('🔗 Đã kết nối vào Chrome đang chạy (VPN active)');
   } catch {
+    console.log('\n⚠️  Không tìm thấy Chrome đang chạy với remote debug port.');
+    console.log('   Để dùng VPN, mở Chrome trước bằng lệnh:');
+    console.log('   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222\n');
+    const ans = await ask('Tiếp tục không có VPN? (y/n): ');
+    if (ans !== 'y') process.exit(0);
     console.log('🚀 Khởi động Chrome mới...');
     const chromePath = config.scrape.chromePath && config.scrape.chromePath[process.platform];
     if (chromePath && !fs.existsSync(chromePath)) {
       console.warn(`⚠️  Không tìm thấy Chrome ở "${chromePath}", dùng Chromium đi kèm Puppeteer.`);
     }
+    const args = ['--no-first-run', '--no-default-browser-check'];
+    if (config.scrape.proxy) args.push(`--proxy-server=${config.scrape.proxy}`);
     browser = await puppeteer.launch({
       headless,
       ...(chromePath && fs.existsSync(chromePath) ? { executablePath: chromePath } : {}),
-      args: ['--no-first-run', '--no-default-browser-check'],
+      args,
     });
   }
   const page = await browser.newPage();
